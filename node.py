@@ -3,4 +3,9 @@ class Node:
     	self.branches = [] 
         self.label = None
         self.children = {}
-	# you may want to add additional fields here...
+       	self.orig_branches = []
+       	self.classifiers = None
+
+
+    def is_leaf(self):
+    	return self.label in self.classifiers
