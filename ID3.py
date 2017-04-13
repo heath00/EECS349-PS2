@@ -61,7 +61,6 @@ def get_branches(examples, best_attribute):
 
   values = [example[best_attribute] for example in examples]
   unique_values = list(set(values))
-  print "unique values", unique_values
 
   branches = [[] for i in range(0, len(unique_values))]
 
@@ -94,29 +93,17 @@ def find_information_gain(attribute, examples, total_entropy):
   
   values = [example[attribute] for example in examples]
   unique_values = list(set(values))
-  if printer:
-    print "uniqe values are ", unique_values
   
   classification_data_sets = [[] for i in range(0, len(unique_values))]
 
   for example in examples:
     attribute_value = example[attribute]
-    # if attribute_value == '?':
-    #   attribute_value = find_value(examples, attribute, example['Class'], unique_values)
-    #   print "\n\nWE HIT ? SO WE MADE IT --> ", attribute_value
 
-    if printer:
-      print "curr attribute is & value is & class", attribute, example[attribute], example['Class']
-    
     for i in range(0, len(unique_values)):
       if attribute_value == unique_values[i]:
         classification_data_sets[i].append(example['Class'])
 
   weights = [float(len(classification_data_sets[i]))/float((len(examples))) for i in range(0, len(classification_data_sets))]
-  
-  if printer:
-    print "weights calculated are: ", weights
-    print "sum of weights are: ", sum(weights)
 
   for data_set in classification_data_sets:
     if len(data_set) == 0:
@@ -127,9 +114,7 @@ def find_information_gain(attribute, examples, total_entropy):
   return_entropy = total_entropy
   for i, val in enumerate(entropies):
     return_entropy -= weights[i]*val
-  if printer:
-    print "entropies are ", entropies
-    print "return_entropy is", return_entropy
+
   return return_entropy
 
 
@@ -138,18 +123,14 @@ def find_best_attribute(examples):
   attributes = examples[0].keys()
   # removes key: Class as it is not an attribute
   attributes.remove('Class')
-  if printer:
-    print "attributes are ", attributes
+
   best_attribute = None
   max_gain = 0
   classification_data = [example['Class'] for example in examples]
-  # print "classification data is ", classification_data
   total_entropy = find_entropy(classification_data)
 
   for attribute in attributes:
     gain = find_information_gain(attribute, examples, total_entropy)
-    if printer:
-      print "gain is and max gain is", gain, max_gain
     if gain > max_gain:
       max_gain = gain
       best_attribute = attribute
@@ -168,16 +149,6 @@ def is_homogenous(examples):
 
 def find_classifiers(examples):
   return list(set([example['Class'] for example in examples]))
-
-def find_q_mark_index(branches):
-  for i, branch in enumerate(branches):
-    for entry in branch:
-      keys = entry.keys()
-      if entry[keys[0]] == '?':
-        return i
-  return -1
-
-
 
 
 def ID3(examples, default):
@@ -229,8 +200,6 @@ def _ID3(examples, default):
           index = keys[num_keys]+1
 
           root_node.children[index] = leaf_node
-          # root_node.children[1] = leaf_node
-
       else:
 
         if len(root_node.children) == 0: 
@@ -241,7 +210,6 @@ def _ID3(examples, default):
           index = keys[num_keys]+1
 
           root_node.children[index] = _ID3(branch, mode_branch)
-          # root_node.children[1] = ID3(branch, mode_branch)
     
     return root_node
 
@@ -249,9 +217,7 @@ def _ID3(examples, default):
 def _prune(node, prune_label, examples):
   node_list = [node]
   root_node = node
-  # print "\n*~*~*~*~*~**~*~~ PRUNING *~*~~*~*~~*~*~"
-  # print "root node label", root_node.label
-  # print "prune label", prune_label
+
   while len(node_list) > 0:
     curr_node = node_list[0]
     if curr_node.label == prune_label:
@@ -332,14 +298,9 @@ def prune(node, examples):
   node_list = [node]
   visited = []
   root_node = node
-  # print "\nSTARTING PRUNING PROCESS"
   while prune and len(node_list) > 0:
     curr_node = node_list[0]    
     base_acc = test(root_node, examples)
-
-    # print "base accuracy", base_acc
-    # print "curr_node label", curr_node.label
-    # print "visited is", visited
 
     if curr_node.is_leaf() or curr_node.label in visited:
       if curr_node in visited:
@@ -358,11 +319,8 @@ def prune(node, examples):
       prune = False
       break
 
-    # print "++++++++++++++ WE HAVE NEW PRUNED TREE ++++++++++++++++"
-    #it is greater or equal, so we need to prune it for real 
     root_node = _prune(node, max_score_label, examples)
     
-    # print "NEW TREE IS AS FOLLOWS (BFS):"
     print_list = [node]
     while len(print_list) > 0:
       curr_node = print_list[0]
@@ -370,16 +328,9 @@ def prune(node, examples):
         if key in curr_node.children:
           print_list.append(curr_node.children[key])
       print_list.pop(0)
-    # print "END OF NEW TREE"
 
     node_list = [root_node]
 
-    # for key in curr_node.children.keys():
-    #   if key in curr_node.children:
-    #     node_list.append(curr_node.children[key])
-    
-
-    # node_list.pop(0)
   return root_node
 
 
@@ -401,20 +352,12 @@ def evaluate(node, example):
   Takes in a tree and one example.  Returns the Class value that the tree
   assigns to the example.
   '''
-  i = 0
   while node.children:
     attribute = node.label
-    i += 1
-    if printer:
-      print "i is ", i
-      print node.branches[0][0]
-      print "example is ", example
     if example[attribute] == node.branches[0][0][attribute]:
       node = node.children[0]
     else:
       node = node.children[1]
-  if printer:
-    print i
   return node.label
 
 
