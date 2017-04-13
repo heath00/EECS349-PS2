@@ -2,7 +2,7 @@ from node import Node
 import math
 import copy
 
-debug = False
+debug = True
 printer = False
 
 def mode(examples):
@@ -163,7 +163,7 @@ def ID3(examples, default):
       
       return root_node
     root_node.label = best_attribute
-    print "\n\nSplitting on attribute ", root_node.label
+    print "Splitting on attribute ", root_node.label
     print "root label is ", root_node.label
     if printer:
       print "the best attribute found is ", best_attribute
@@ -205,13 +205,12 @@ def ID3(examples, default):
 def _prune(node, prune_label, examples):
   node_list = [node]
   root_node = node
-  print "root node label and children are", root_node.label, root_node.children
-  print "prune label",prune_label
+  print "\n*~*~*~*~*~**~*~~ PRUNING *~*~~*~*~~*~*~"
+  print "root node label", root_node.label
+  print "prune label", prune_label
   while len(node_list) > 0:
     curr_node = node_list[0]
     if curr_node.label == prune_label:
-      # curr_branches = [branch for branch in curr_node.branches]
-      # classifications = [example['Class'] for example in curr_examples]
       total_examples = []
       for branch in curr_node.branches:
         for example in branch:
@@ -226,7 +225,10 @@ def _prune(node, prune_label, examples):
           max_mode = total_examples.count(value)
           max_mode_index = values.index(value)
       print "total examples are ", total_examples
-      print "max mode is  max index is", max_mode, max_mode_index
+      print "max mode is max index is", max_mode, max_mode_index
+      # if curr_node.label == 'b':
+      #   print "yes"
+      #   max_mode_index = 1
       curr_node.label = total_examples.index(max_mode_index)
       curr_node.children = {}
       print "new label is ", curr_node.label
@@ -243,38 +245,39 @@ def _prune(node, prune_label, examples):
 
 def find_max_prune_gain(pruning_scores_dict):
   keys = pruning_scores_dict.keys()
+  print "pruning scores dict is", pruning_scores_dict
   max_gain = pruning_scores_dict[keys[0]]
-  ret_key = keys[0]
+  return_key = keys[0]
 
   for key in keys:
     if pruning_scores_dict[key] > max_gain:
       max_gain = pruning_scores_dict[key]
+      return_key = key
 
-  return ret_key, max_gain
+  return return_key, max_gain
 
 
 def get_prune_scores(node, examples):
   scores = {}
-  classifications = list(set([example['Class'] for example in examples]))
-  # print "nodes children iin score func are", node.children
+  # classifications = list(set([example['Class'] for example in examples]))
   node_list = [node]
-  # print "nodes children iin score func are NOW", node_list[0].children
   root_node = node
   while len(node_list) > 0:
-    # curr_root = root_node
     prune_node = node_list[0]
-    print ".........",root_node, prune_node
-    if prune_node.label in classifications:
+    print "prune node is", prune_node.label
+    # if prune_node.label in classifications: # we have a leaf node ... skip node
+    if prune_node.is_leaf():
       node_list.pop(0)
       continue
     scores[prune_node.label] = test(_prune(copy.deepcopy(root_node), prune_node.label, examples), examples)
-    print "keys are", prune_node.children.keys()
-    print "children are",prune_node.children
+    # print "keys are", prune_node.children.keys()
+    # print "children are",prune_node.children
     for key in prune_node.children.keys():
       if key in prune_node.children:
-        print "appending pruning node"
         node_list.append(prune_node.children[key])
     node_list.pop(0)
+    print len(node_list)
+
   print "scores are ",scores
   return scores
 
@@ -296,27 +299,64 @@ def prune(node, examples):
   '''
   prune = True
   node_list = [node]
+  visited = []
   root_node = node
-
+  i = 0
+  print "\nSTARTING PRUNING PROCESS"
   while prune and len(node_list) > 0:
+    i+= 1
     curr_node = node_list[0]
+    
     base_acc = test(root_node, examples)
-    print "curr node label is", curr_node.label
     print "base accuracy", base_acc
-    # print "curr nodes children ", curr_node.children 
+    print "curr_node label", curr_node.label
+
+    print "visited is", visited
+    if curr_node.is_leaf() or curr_node.label in visited:
+      if curr_node in visited:
+         for key in curr_node.children.keys():
+          if key in curr_node.children and not curr_node.children[key].label in visited:
+            node_list.append(curr_node.children[key])
+
+      print "node is leaf or is in visited"
+      node_list.pop(0)
+      continue
+    #   print "curr leaf nodes value is: ", curr_node.label
+    #   print "is leaf -- returning"
+    #   return root_node
+    #   # node_list.pop(0)
+    #   # continue
+    visited.append(curr_node.label)
     scores = get_prune_scores(curr_node, examples)
     max_score_label, max_score = find_max_prune_gain(scores)
     print "Max score is ", max_score
     if max_score < base_acc:
       prune = False
       break
-    #it is greater, so we need to prune it for real 
+    print "++++++++++++++ WE HAVE NEW PRUNED TREE ++++++++++++++++"
+    #it is greater or equal, so we need to prune it for real 
     root_node = _prune(node, max_score_label, examples)
+    
+    print "NEW TREE IS AS FOLLOWS (BFS):"
+    print_list = [node]
+    while len(print_list) > 0:
+      curr_node = print_list[0]
+      print curr_node.label
+      for key in curr_node.children.keys():
+        if key in curr_node.children:
+          print_list.append(curr_node.children[key])
+      print_list.pop(0)
+    print "END OF NEW TREE"
 
-    for key in curr_node.children.keys():
-      if key in curr_node.children:
-        node_list.append(curr_node.children[key])
-    node_list.pop(0)
+    node_list = [root_node]
+
+    # for key in curr_node.children.keys():
+    #   if key in curr_node.children:
+    #     node_list.append(curr_node.children[key])
+    
+
+    # node_list.pop(0)
+  print "i is ", i
   return root_node
 
 
