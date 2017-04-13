@@ -26,14 +26,27 @@ def testPruning():
   else:
     print "pruning test failed -- no tree returned."
 
+def testPruning_2():
+  data = [dict(a=1, b=0, Class=0), dict(a=1, b=1, Class=0), dict(a=0, b=1, Class=1)]
+  validationData = [dict(a=1, b=0, Class=0), dict(a=1, b=1, Class=0), dict(a=0, b=0, Class=0), dict(a=0, b=0, Class=0)]
+  tree = ID3.ID3(data, 0)
+  ID3.prune(tree, validationData)
+  if tree != None:
+    ans = ID3.evaluate(tree, dict(a=0, b=0))
+    if ans != 0:
+      print "pruning test failed."
+    else:
+      print "pruning test succeeded."
+  else:
+    print "pruning test failed -- no tree returned."
+
+
 def testID3AndTest():
   trainData = [dict(a=1, b=0, c=0, Class=1), dict(a=1, b=1, c=0, Class=1), 
   dict(a=0, b=0, c=0, Class=0), dict(a=0, b=1, c=0, Class=1)]
   testData = [dict(a=1, b=0, c=1, Class=1), dict(a=1, b=1, c=1, Class=1), 
   dict(a=0, b=0, c=1, Class=0), dict(a=0, b=1, c=1, Class=0)]
-  print "before", trainData
   tree = ID3.ID3(trainData, 0)
-  print "after", trainData
   fails = 0
   if tree != None:
     acc = ID3.test(tree, trainData)
@@ -90,8 +103,55 @@ def testPruningOnHouseData(inFile):
   print withoutPruning
   print "average with pruning",sum(withPruning)/len(withPruning)," without: ",sum(withoutPruning)/len(withoutPruning)
 
+
+def plotter(inFile):
+  import matplotlib.pyplot as plt
+  x_values = []
+  y_values = []
+  y_values_prune =[]
+
+  training_set_sizes = [10+14*i for i in range(21)]
+
+  data = parse.parse(inFile)
+  for training_set in training_set_sizes:
+    x = []
+    y = []
+    y_prune = []
+    print "PRINTING TS,", training_set
+    for i in range(100):
+      random.shuffle(data)
+      train = data[:training_set]
+      valid = data[training_set:training_set  + training_set / 4]
+      test = data[training_set  + training_set/ 4:]
+
+      tree = ID3.ID3(train, 'democrat')
+      acc = ID3.test(tree, test)
+      x.append(training_set)
+      y.append(acc)
+
+      ID3.prune(tree, valid)
+      acc_prune = ID3.test(tree, train) 
+      y_prune.append(acc_prune)
+
+
+    x_values.append(sum(x)/len(x))
+    y_values.append(sum(y)/len(y))
+    y_values_prune.append(sum(y_prune)/len(y_prune))
+
+  plt.plot(x_values, y_values, 'r--', x_values, y_values_prune, 'b--')
+  plt.show()
+
+
+
+
+
 # testID3AndTest()
 # testID3AndEvaluate()
-testPruning()
-# testPruningOnHouseData()
+# testPruning()
+# testPruningOnHouseData('house_votes_84.data')
+# testPruning_2()
+
+plotter('house_votes_84.data')
+
+
   

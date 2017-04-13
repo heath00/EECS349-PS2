@@ -3,7 +3,6 @@ class Node:
     	self.branches = [] 
         self.label = None
         self.children = {}
-       	self.orig_branches = []
        	self.classifiers = None
 
 
